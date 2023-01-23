@@ -3,6 +3,7 @@ package com.jsyrjako.reminderapp.ui.login
 import android.graphics.drawable.shapes.Shape
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -19,7 +20,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun LoginScreen(
@@ -35,7 +38,7 @@ fun LoginScreen(
             ) {
 
 //        Image(
-//            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+ //            painter = painterResource(id = R.drawable.ic_launcher_foreground),
 //            contentDescription = "login_image",
 //            modifier = Modifier.fillMaxWidth(),
 //            alignment = Alignment.Center
