@@ -26,7 +26,8 @@ import androidx.navigation.NavController
 
 @Composable
 fun LoginScreen(
-    modifier: Modifier
+    modifier: Modifier,
+    navController: NavController
 ){
     val username = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
@@ -74,7 +75,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
-            onClick = { /*TODO*/ },
+            onClick = { navController.navigate("home") },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(corner = CornerSize(50.dp))
         )

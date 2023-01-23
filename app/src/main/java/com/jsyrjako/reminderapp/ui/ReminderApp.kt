@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jsyrjako.reminderapp.ReminderAppState
 import com.jsyrjako.reminderapp.rememberReminderAppState
+import com.jsyrjako.reminderapp.ui.home.Home
 import com.jsyrjako.reminderapp.ui.login.LoginScreen
 
 @Composable
@@ -18,7 +19,10 @@ fun ReminderApp (
         startDestination = "login"
     ) {
         composable(route = "login") {
-            LoginScreen(modifier = Modifier.fillMaxSize())
+            LoginScreen(modifier = Modifier.fillMaxSize(), navController = appState.navController)
+        }
+        composable(route = "home") {
+            Home()
         }
     }
 }
