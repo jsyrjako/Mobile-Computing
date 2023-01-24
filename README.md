@@ -1,2 +1,2 @@
 # Mobile-Computing
-Mobile Computing course
+This is folder for Mobile Computing course project
