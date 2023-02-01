@@ -10,6 +10,7 @@ import com.jsyrjako.reminderapp.rememberReminderAppState
 import com.jsyrjako.reminderapp.ui.home.Home
 import com.jsyrjako.reminderapp.ui.login.LoginScreen
 import com.jsyrjako.reminderapp.ui.mainscreen.MainScreen
+import com.jsyrjako.reminderapp.ui.reminder.Reminder
 import com.jsyrjako.reminderapp.ui.singUp.SingUpScreen
 
 
@@ -31,7 +32,10 @@ fun ReminderApp (
             SingUpScreen(modifier = Modifier.fillMaxSize(), navController = appState.navController)
         }
         composable(route = "home") {
-            Home()
+            Home(navController = appState.navController)
+        }
+        composable(route = "Reminder") {
+            Reminder(onBackPress = appState::navigateBack, navController = appState.navController)
         }
     }
 }
