@@ -28,7 +28,7 @@ fun ReminderApp (
         composable(route = "login") {
             LoginScreen(modifier = Modifier.fillMaxSize(), navController = appState.navController)
         }
-        composable(route = "SingUp") {
+        composable(route = "SignUp") {
             SingUpScreen(modifier = Modifier.fillMaxSize(), navController = appState.navController)
         }
         composable(route = "home") {

@@ -40,18 +40,18 @@ fun MainScreen(
             shape = RoundedCornerShape(corner = CornerSize(50.dp))
         )
         {
-            Text(text = "Sing In")
+            Text(text = "Sign In")
         }
 
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
-            onClick = { navController.navigate("SingUp") },
+            onClick = { navController.navigate("SignUp") },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(corner = CornerSize(50.dp)),
         )
         {
-            Text(text = "Sing Up")
+            Text(text = "Sign Up")
         }
     }
 }
