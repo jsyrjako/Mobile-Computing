@@ -18,12 +18,19 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.jsyrjako.reminderapp.data.sharedPreferences.SharedPreferences
+
 
 @Composable
 fun LoginScreen(
     modifier: Modifier,
     navController: NavController
 ){
+    // get username
+    val setusername = SharedPreferences().username
+    // get password
+    val setpassword = SharedPreferences().password
+
     val username = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
 
@@ -76,7 +83,11 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(30.dp))
 
         Button(
-            onClick = { navController.navigate("home") },
+            onClick = { 
+                if (username.value == setusername && password.value == setpassword){
+                    navController.navigate("home")
+                }
+            },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(corner = CornerSize(50.dp))
         )
