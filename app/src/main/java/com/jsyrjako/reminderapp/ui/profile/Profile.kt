@@ -101,7 +101,7 @@ fun Profile(
                     shape = RoundedCornerShape(corner = CornerSize(50.dp))
                 )
                 {
-                    Text(text = "Save Reminder")
+                    Text(text = "Save")
                 }
 
             }
