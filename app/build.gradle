@@ -85,4 +85,7 @@ dependencies {
     // Room
     implementation "androidx.room:room-ktx:2.5.0"
     kapt "androidx.room:room-compiler:2.5.0"
+
+    // Material3
+    implementation "androidx.compose.material3:material3:1.0.1"
 }

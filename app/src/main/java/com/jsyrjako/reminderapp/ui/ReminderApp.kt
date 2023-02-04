@@ -10,6 +10,7 @@ import com.jsyrjako.reminderapp.rememberReminderAppState
 import com.jsyrjako.reminderapp.ui.home.Home
 import com.jsyrjako.reminderapp.ui.login.LoginScreen
 import com.jsyrjako.reminderapp.ui.mainscreen.MainScreen
+import com.jsyrjako.reminderapp.ui.profile.Profile
 import com.jsyrjako.reminderapp.ui.reminder.Reminder
 import com.jsyrjako.reminderapp.ui.singUp.SingUpScreen
 
@@ -36,6 +37,9 @@ fun ReminderApp (
         }
         composable(route = "Reminder") {
             Reminder(onBackPress = appState::navigateBack, navController = appState.navController)
+        }
+        composable(route = "Profile") {
+            Profile(onBackPress = appState::navigateBack, navController = appState.navController)
         }
     }
 }

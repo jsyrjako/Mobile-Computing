@@ -71,6 +71,7 @@ fun HomeContent(
 
             HomeAppBar(
                 backgroundColor = appBarColor,
+                navController = navController
             )
 
             CategoryTabs(
@@ -88,7 +89,8 @@ fun HomeContent(
 
 @Composable
 private fun HomeAppBar(
-    backgroundColor: Color
+    backgroundColor: Color,
+    navController: NavController,
 ) {
     TopAppBar(
         title = {
@@ -105,7 +107,7 @@ private fun HomeAppBar(
             IconButton( onClick = {} ) {
                 Icon(imageVector = Icons.Filled.Search, contentDescription = stringResource(R.string.search))
             }
-            IconButton( onClick = {} ) {
+            IconButton({ navController.navigate(route = "Profile") }) {
                 Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.account))
             }
         }
