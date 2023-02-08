@@ -1,4 +1,4 @@
-package com.jsyrjako.reminderapp.ui
+package com.jsyrjako.reminderapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -6,14 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.jsyrjako.reminderapp.ui.ReminderApp
-import com.jsyrjako.reminderapp.ui.login.LoginScreen
+import com.jsyrjako.reminderapp.navigation.MainNavigation
 import com.jsyrjako.reminderapp.ui.theme.ReminderAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +22,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    ReminderApp()
+                    MainNavigation()
                 }
             }
         }
