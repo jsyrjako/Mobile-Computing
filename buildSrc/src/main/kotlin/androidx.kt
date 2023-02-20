@@ -14,6 +14,7 @@ object androidx {
             val test_manifest = "androidx.compose.ui:ui-test-manifest:$version"
         }
         val material = "androidx.compose.material:material:$version"
+        val material_icons = "androidx.compose.material:material-icons-extended:$version"
     }
 
     object lifecycle {

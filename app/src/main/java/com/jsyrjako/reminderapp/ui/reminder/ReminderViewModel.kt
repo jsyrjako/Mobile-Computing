@@ -12,29 +12,71 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jsyrjako.core.domain.entity.Category
 import com.jsyrjako.core.domain.entity.Reminder
+import com.jsyrjako.core.domain.repository.CategoryRepository
 import com.jsyrjako.core.domain.repository.ReminderRepository
 import com.jsyrjako.reminderapp.Graph
 import com.jsyrjako.reminderapp.R
+import com.jsyrjako.reminderapp.ui.category.CategoryViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private lateinit var setReminder: Reminder
+
 @HiltViewModel
 class ReminderViewModel @Inject constructor (
-    private val reminderRepository: ReminderRepository
+    private val reminderRepository: ReminderRepository,
+    private val categoryRepository: CategoryRepository,
     ):ViewModel() {
 
-    private val _viewState = MutableStateFlow<ReminderViewState>(ReminderViewState.Loading)
-    val uiState: StateFlow<ReminderViewState> = _viewState
+    private val _reminderViewState = MutableStateFlow<ReminderViewState>(ReminderViewState.Loading)
+    val uiState: StateFlow<ReminderViewState> = _reminderViewState
+
+    private val _categoryList: MutableStateFlow<List<Category>> = MutableStateFlow(mutableListOf())
+    val categories: StateFlow<List<Category>> =_categoryList
+
+    private val _categoryViewState = MutableStateFlow<CategoryViewState>(CategoryViewState.Loading)
+    val categoryState: StateFlow<CategoryViewState> = _categoryViewState
+
+    private val _selectedCategory = MutableStateFlow<Category?>(null)
 
     fun saveReminder(reminder: Reminder) {
         viewModelScope.launch {
             reminderRepository.addReminder(reminder)
             notifyUserOfPayment(reminder)
         }
+    }
+
+    fun deleteReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            reminderRepository.deleteReminder(reminder)
+        }
+    }
+
+
+    fun editReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            reminderRepository.editReminder(reminder)
+        }
+    }
+
+    fun setReminder(reminder: Reminder) {
+        setReminder = reminder
+    }
+
+    fun getReminder() : Reminder{
+        return setReminder
+    }
+
+    fun onCategorySelected(category: Category) {
+        _selectedCategory.value = category
     }
 
     private fun notifyUserOfPayment(reminder: Reminder) {
@@ -45,7 +87,7 @@ class ReminderViewModel @Inject constructor (
         )
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("New reminder made")
-            .setContentText("You have ${reminder.title} on ${reminder.dateNow}")
+            .setContentText("You have ${reminder.title} on ${reminder.reminder_time}")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         with(NotificationManagerCompat.from(Graph.appContext)) {
@@ -79,16 +121,57 @@ class ReminderViewModel @Inject constructor (
     }
 
     fun loadRemindersFor(category: Category?) {
-        viewModelScope.launch {
-            if (category != null) {
-                reminderRepository.loadRemindersFor(category).map {
-                    _viewState.value = ReminderViewState.Success(it)
-                }
+        if (category != null) {
+            viewModelScope.launch {
+                val reminders = reminderRepository.loadAllReminders()
+                _reminderViewState.value =
+                    ReminderViewState.Success(
+                        reminders.filter {
+                            it.categoryId == category.categoryId }
+                    )
             }
         }
     }
 
+    private suspend fun loadCategories() {
+        combine(
+            categoryRepository.loadCategories()
+                .onEach { categories ->
+                    if (categories.isNotEmpty() && _selectedCategory.value == null) {
+                        _selectedCategory.value = categories.first()
+                    }
+                },
+            _selectedCategory
+        ) { categories, selectedCategory ->
+            _categoryViewState.value = CategoryViewState.Success(selectedCategory, categories)
+            _categoryList.value = categories
+        }
+            .catch { error -> CategoryViewState.Error(error) }
+            .launchIn(viewModelScope)
+    }
+
+    //private fun fakeData() = listOf(
+    //    Category(name = "Home"),
+    //    Category(name = "Test"),
+    //    Category(name = "Work"),
+    //    Category(name = "ttttt")
+    //)
+
     init {
         createNotificationChannel()
+
+        //fakeData().forEach {
+        //    viewModelScope.launch {
+        //        categoryRepository.addCategory(it)
+        //    }
+        //}
+        //dummyData().forEach {
+        //    viewModelScope.launch {
+        //        savePayment(it)
+        //    }
+        //}
+        viewModelScope.launch {
+            loadCategories()
+        }
     }
 }

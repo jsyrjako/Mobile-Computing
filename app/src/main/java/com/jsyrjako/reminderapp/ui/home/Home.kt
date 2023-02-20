@@ -27,7 +27,9 @@ import com.jsyrjako.reminderapp.ui.reminder.ReminderViewModel
 import com.jsyrjako.reminderapp.ui.reminder.ReminderViewState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun Home(
@@ -105,7 +107,8 @@ fun HomeContent(
 
             ReminderList(
                 selectedCategory = selectedCategory,
-                reminderViewModel = reminderViewModel
+                reminderViewModel = reminderViewModel,
+                navController = navController,
             )
         }
     }
@@ -166,11 +169,11 @@ private fun ChoiceChipContent(
     }
 }
 
-// shows a list of reminders for a given category
 @Composable
 private fun ReminderList(
     selectedCategory: Category,
-    reminderViewModel: ReminderViewModel
+    reminderViewModel: ReminderViewModel,
+    navController: NavController,
 ) {
     reminderViewModel.loadRemindersFor(selectedCategory)
 
@@ -189,6 +192,8 @@ private fun ReminderList(
                         reminder = item,
                         category = selectedCategory,
                         onClick = {},
+                        reminderViewModel = reminderViewModel,
+                        navController = navController
                     )
                 }
             }
@@ -204,12 +209,19 @@ private fun ReminderListItem(
     category: Category,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    reminderViewModel: ReminderViewModel,
+    navController: NavController,
 ) {
     ConstraintLayout(
-        modifier = modifier.clickable { onClick() }
+        modifier = modifier.clickable {
+            reminderViewModel.setReminder(reminder)
+            navController.navigate("ReminderEdit") }
+            .fillMaxWidth(),
+
     ) {
-        val (dividerRef, titleRef, categoryRef, iconRef, dateRef) = createRefs()
+        val (dividerRef, titleRef, categoryRef, iconRef, iconRef2, dateRef) = createRefs()
         Divider(
+
             Modifier.constrainAs(dividerRef) {
                 top.linkTo(parent.top)
                 centerHorizontallyTo(parent)
@@ -228,7 +240,7 @@ private fun ReminderListItem(
                     end = iconRef.start,
                     startMargin = 24.dp,
                     endMargin = 16.dp,
-                    bias = 0f // float this towards the start. this was is the fix we needed
+                    bias = 0f
                 )
                 top.linkTo(parent.top, margin = 10.dp)
                 width = Dimension.preferredWrapContent
@@ -246,7 +258,7 @@ private fun ReminderListItem(
                     end = iconRef.start,
                     startMargin = 24.dp,
                     endMargin = 8.dp,
-                    bias = 0f // float this towards the start. this was is the fix we needed
+                    bias = 0f
                 )
                 top.linkTo(titleRef.bottom, margin = 6.dp)
                 bottom.linkTo(parent.bottom, 10.dp)
@@ -256,7 +268,7 @@ private fun ReminderListItem(
 
         // date
         Text(
-            text = reminder.dateNow.toString(),
+            text = reminder.reminder_time.toString(),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.caption,
@@ -266,7 +278,7 @@ private fun ReminderListItem(
                     end = iconRef.start,
                     startMargin = 8.dp,
                     endMargin = 16.dp,
-                    bias = 0f // float this towards the start. this was is the fix we needed
+                    bias = 0f
                 )
                 centerVerticallyTo(categoryRef)
                 top.linkTo(titleRef.bottom, 6.dp)
@@ -276,7 +288,9 @@ private fun ReminderListItem(
 
         // icon
         IconButton(
-            onClick = { /*TODO*/ },
+            onClick = {
+                reminderViewModel.deleteReminder(reminder)
+            },
             modifier = Modifier
                 .size(50.dp)
                 .padding(6.dp)
@@ -291,7 +305,30 @@ private fun ReminderListItem(
                 contentDescription = ""
             )
         }
+        // icon
+        IconButton(
+            onClick = {
+                reminderViewModel.setReminder(reminder)
+                navController.navigate("ReminderEdit")
+            },
+            modifier = Modifier
+                .size(50.dp)
+                .padding(6.dp)
+                .constrainAs(iconRef2) {
+                    top.linkTo(parent.top, 10.dp)
+                    bottom.linkTo(parent.bottom, 10.dp)
+                    end.linkTo(iconRef.start)
+                }
+
+
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = ""
+            )
+        }
     }
 }
+
 
 private val emptyTabIndicator: @Composable (List<TabPosition>) -> Unit = {}

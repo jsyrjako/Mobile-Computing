@@ -10,11 +10,17 @@ interface ReminderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate( reminder: ReminderEntity)
 
-    @Query("SELECT * FROM reminders WHERE reminderId LIKE :reminderId")
-    fun findOne(reminderId: Long): Flow<ReminderEntity>
+    @Query("SELECT * FROM reminders")
+    suspend fun findAll(): List<ReminderEntity>
 
-    @Query("""SELECT * from categories JOIN reminders ON reminders.category_id = categories.categoryId WHERE categoryId LIKE :categoryId""")
-    fun findRemindersByCategory(categoryId: Long): Flow<Map<CategoryEntity, List<ReminderEntity>>>
+    @Query("SELECT * FROM reminders WHERE reminderId LIKE :reminderId")
+    suspend fun findById(reminderId: Long): ReminderEntity
+
+    @Query("SELECT * FROM reminders WHERE category_id LIKE :categoryId")
+    fun findRemindersByCategory(categoryId: Long): Flow<List<ReminderEntity>>
+
+    @Query("SELECT * FROM reminders WHERE category_id LIKE :categoryId")
+    suspend fun findRemindersByCategorySync(categoryId: Long): List<ReminderEntity>
 
     @Delete
     suspend fun delete(reminder: ReminderEntity)

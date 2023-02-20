@@ -1,6 +1,7 @@
 package com.jsyrjako.core.database.entity
 
 import androidx.room.*
+import java.sql.Date
 import java.time.LocalDateTime
 
 @Entity(
@@ -26,7 +27,11 @@ data class ReminderEntity (
     val title: String,
     @ColumnInfo(name = "category_id")
     val categoryId: Long,
-    val dateNow: LocalDateTime,
-    val setDate: String,
-    val text: String
+    val creation_time: LocalDateTime,
+    val reminder_time: String,
+    val text: String,
+    val location_x: String,
+    val location_y: String,
+    val creator_id: Long = 0,
+    val reminder_seen: Boolean
 )

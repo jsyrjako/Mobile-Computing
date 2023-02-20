@@ -9,16 +9,15 @@ import androidx.navigation.compose.rememberNavController
 import com.jsyrjako.reminderapp.ui.home.Home
 import com.jsyrjako.reminderapp.ui.login.LoginScreen
 import com.jsyrjako.reminderapp.ui.mainscreen.MainScreen
+import com.jsyrjako.reminderapp.ui.maps.ReminderLocation
 import com.jsyrjako.reminderapp.ui.profile.Profile
 import com.jsyrjako.reminderapp.ui.reminder.ReminderScreen
+import com.jsyrjako.reminderapp.ui.reminder.editReminderScreen
 import com.jsyrjako.reminderapp.ui.singUp.SingUpScreen
 
 
-
 @Composable
-fun MainNavigation (
-    //appState: ReminderAppState = rememberReminderAppState(),
-){
+fun MainNavigation (){
     val navController = rememberNavController()
     NavHost(
         navController = navController,
@@ -39,9 +38,14 @@ fun MainNavigation (
         composable(route = "Reminder") {
             ReminderScreen(navController = navController)
         }
+        composable(route = "ReminderEdit") {
+            editReminderScreen(navController = navController)
+        }
         composable(route = "Profile") {
             Profile(navController = navController)
         }
+        composable(route = "Location") {
+            ReminderLocation(navController = navController)
+        }
     }
 }
-
