@@ -26,13 +26,16 @@ fun ReminderLocation(navController: NavController) {
             map.uiSettings.isZoomControlsEnabled = true
             map.uiSettings.isScrollGesturesEnabled = true
             val location = LatLng(65.06, 25.47)
+
             map.moveCamera(
                 CameraUpdateFactory.newLatLngZoom(
                     LatLng(location.latitude, location.longitude),
                     10f
                 )
             )
-            setMapLongClick(map, navController)
+
+
+            setMapLongClick(map = map, navController = navController)
         }
     }
 }
@@ -55,7 +58,7 @@ private fun setMapLongClick(
             navController.previousBackStackEntry
                 ?.savedStateHandle
                 ?.set("location_data", latlng)
-                navController.popBackStack()
+            navController.popBackStack()
         }
     }
 }

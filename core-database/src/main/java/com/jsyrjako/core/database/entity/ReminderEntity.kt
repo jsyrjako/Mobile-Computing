@@ -1,7 +1,6 @@
 package com.jsyrjako.core.database.entity
 
 import androidx.room.*
-import java.sql.Date
 import java.time.LocalDateTime
 
 @Entity(
@@ -21,7 +20,7 @@ import java.time.LocalDateTime
     ]
 
 )
-data class ReminderEntity (
+data class ReminderEntity(
     @PrimaryKey(autoGenerate = true)
     val reminderId: Long = 0,
     val title: String,

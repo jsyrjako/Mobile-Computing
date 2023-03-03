@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.android.gms.maps.model.LatLng
 import java.time.LocalDateTime
 import com.jsyrjako.core.domain.entity.Reminder
 import java.sql.Date
@@ -50,6 +51,11 @@ fun ReminderScreen(
     )
     val context = LocalContext.current
 
+    val latLng = navController
+        .currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<LatLng>("location_data")
+        ?.value
 
     Surface {
         Column (
@@ -109,19 +115,27 @@ fun ReminderScreen(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedButton(
-                    onClick = {
-                        requestPermission(
-                            context = context,
-                            permission = Manifest.permission.ACCESS_FINE_LOCATION,
-                            requestPermission = { launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-                        ).apply {
-                            navController.navigate("Location")
-                        }
-                    },
-                    modifier = Modifier.height(55.dp)
-                ) {
-                    Text(text = "Reminder location")
+                if (latLng == null) {
+                    OutlinedButton(
+                        onClick = {
+                            requestPermission(
+                                context = context,
+                                permission = Manifest.permission.ACCESS_FINE_LOCATION,
+                                requestPermission = { launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+                            ).apply {
+                                navController.navigate("Location")
+                            }
+                        },
+                        modifier = Modifier.height(55.dp)
+                    ) {
+                        Text(text = "Reminder location")
+                    }
+                } else {
+                    Text(
+                        text = "Lat: ${latLng.latitude}, \nLng: ${latLng.longitude}"
+                    )
+                    location_x.value = latLng.latitude.toString()
+                    location_y.value = latLng.longitude.toString()
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
