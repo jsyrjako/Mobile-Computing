@@ -1,9 +1,12 @@
 package com.jsyrjako.reminderapp.ui.reminder
 
 import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.DatePicker
+import android.widget.TimePicker
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -28,6 +31,7 @@ import com.google.android.gms.maps.model.LatLng
 import java.time.LocalDateTime
 import com.jsyrjako.core.domain.entity.Reminder
 import java.sql.Date
+import java.util.*
 
 
 @Composable
@@ -96,11 +100,18 @@ fun ReminderScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = reminder_time.value,
-                    onValueChange = { reminder_time.value = it },
-                    label = { Text(text = "Reminder time")}
+                // OutlinedTextField(
+                //     modifier = Modifier.fillMaxWidth(),
+                //     value = reminder_time.value,
+                //     onValueChange = { reminder_time.value = it },
+                //     label = { Text(text = "Reminder time")}
+                // )
+
+                DateTimePicker(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    reminder_time = reminder_time
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -238,3 +249,84 @@ private fun requestPermission(
     }
 }
 
+// DatePicker for picking a date and time from a calendar view
+// Fun is Composable so it can be used in a Composable function
+@Composable
+private fun DateTimePicker(
+    modifier: Modifier = Modifier,
+    reminder_time: MutableState<String>
+) {
+    val calendar = Calendar.getInstance()
+    val context = LocalContext.current
+
+    val date = remember { mutableStateOf("") }
+    val time = remember { mutableStateOf("") }
+    val dateAndTime = remember { mutableStateOf("") }
+
+    val year: Int
+    val month: Int
+    val day: Int
+    val hour: Int
+    val minute: Int
+
+
+    if (reminder_time.value == "") {
+        year = calendar[Calendar.YEAR]
+        month = calendar[Calendar.MONTH]
+        day = calendar[Calendar.DAY_OF_MONTH]
+        hour = calendar[Calendar.HOUR_OF_DAY]
+        minute = calendar[Calendar.MINUTE]
+    } else {
+        val reminderTime = reminder_time.value.split(" ")
+        val reminderDate = reminderTime[0].split("-")
+        val reminderTimeOnly = reminderTime[1].split(":")
+
+        year = reminderDate[0].toInt()
+        month = reminderDate[1].toInt()
+        day = reminderDate[2].toInt()
+        hour = reminderTimeOnly[0].toInt()
+        minute = reminderTimeOnly[1].toInt()
+    }
+
+    val DatePickerDialog = DatePickerDialog(
+        context,
+         { _: DatePicker, year: Int, month: Int, day: Int ->
+            date.value = "$year-$month-$day"
+        }, year, month, day
+    )
+
+    val TimePickerDialog = TimePickerDialog(
+        context,
+        { _: TimePicker, hour: Int, minute: Int ->
+            time.value = "$hour:$minute"
+        }, hour, minute, true
+    )
+
+    dateAndTime.value = "${date.value} ${time.value}"
+
+    println("dateAndTime.value: ${dateAndTime.value}")
+    println("reminder_time.value: ${reminder_time.value}")
+
+    if (date.value.isNotEmpty() && time.value.isNotEmpty()){
+        reminder_time.value = dateAndTime.value
+        println("Set reminder_time.value to ${reminder_time.value}")
+    }
+
+    OutlinedTextField(
+        modifier = modifier,
+        value = dateAndTime.value,
+        onValueChange = { dateAndTime.value = it },
+        label = { Text(text = "Reminder time")},
+        readOnly = true,
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = null,
+                modifier = Modifier.clickable {
+                    DatePickerDialog.show()
+                    TimePickerDialog.show()
+                }
+            )
+        }
+    )
+}
