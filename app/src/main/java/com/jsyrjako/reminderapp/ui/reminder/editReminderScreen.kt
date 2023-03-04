@@ -225,7 +225,7 @@ fun editDateTimePicker(
          val time = reminder_time.value.split(" ")[1]
 
          year = date.split("-")[0].toInt()
-         month = date.split("-")[1].toInt()
+         month = date.split("-")[1].toInt() - 1
          day = date.split("-")[2].toInt()
          hour = time.split(":")[0].toInt()
          minute = time.split(":")[1].toInt()

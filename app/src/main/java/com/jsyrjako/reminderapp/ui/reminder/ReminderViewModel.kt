@@ -167,7 +167,7 @@ class ReminderViewModel @Inject constructor (
                 if (workInfo.state == WorkInfo.State.SUCCEEDED) {
                     createSuccessNotification(reminder)
                 } else {
-                    createFailureNotification(reminder)
+                    notifyUserOfReminder(reminder)
                 }
             }
     }
