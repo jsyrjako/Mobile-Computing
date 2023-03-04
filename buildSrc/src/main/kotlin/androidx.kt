@@ -58,4 +58,27 @@ object androidx {
         val espresso_core = "androidx.test.espresso:espresso-core:$version"
     }
 
+    object work {
+        private val work_version = "2.8.0"
+
+        // (Java only)
+        val runtime = "androidx.work:work-runtime:$work_version"
+
+        // Kotlin + coroutines
+        val runtime_ktx = "androidx.work:work-runtime-ktx:$work_version"
+
+        // optional - RxJava2 support
+        val rxjava2 = "androidx.work:work-rxjava2:$work_version"
+
+        // optional - GCMNetworkManager support
+        val gcm = "androidx.work:work-gcm:$work_version"
+
+        // optional - Test helpers
+        val testing = "androidx.work:work-testing:$work_version"
+
+        // optional - Multiprocess support
+        val multiprocess = "androidx.work:work-multiprocess:$work_version"
+
+    }
+
 }

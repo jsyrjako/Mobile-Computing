@@ -27,11 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.work.*
 import com.google.android.gms.maps.model.LatLng
 import java.time.LocalDateTime
 import com.jsyrjako.core.domain.entity.Reminder
 import java.sql.Date
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 @Composable
@@ -154,19 +156,19 @@ fun ReminderScreen(
                 Button(
                     onClick = {
                         println(LocalDateTime.now())
-                        viewModel.saveReminder(
-                            Reminder(
-                                title = title.value,
-                                categoryId = getCategoryId(viewModel, category.value),
-                                creation_time = LocalDateTime.now(),
-                                reminder_time = reminder_time.value,
-                                text = text.value,
-                                location_x = location_x.value,
-                                location_y = location_y.value,
-                                creator_id = creator_id,
-                                reminder_seen = reminder_seen
-                            )
+                        var reminder = Reminder(
+                            title = title.value,
+                            categoryId = getCategoryId(viewModel, category.value),
+                            creation_time = LocalDateTime.now(),
+                            reminder_time = reminder_time.value,
+                            text = text.value,
+                            location_x = location_x.value,
+                            location_y = location_y.value,
+                            creator_id = creator_id,
+                            reminder_seen = reminder_seen
                         )
+                        viewModel.saveReminder(reminder)
+
                         navController.popBackStack()
                               },
                     modifier = Modifier
@@ -291,7 +293,7 @@ private fun DateTimePicker(
     val DatePickerDialog = DatePickerDialog(
         context,
          { _: DatePicker, year: Int, month: Int, day: Int ->
-            date.value = "$year-$month-$day"
+            date.value = "$year-${month+1}-$day"
         }, year, month, day
     )
 

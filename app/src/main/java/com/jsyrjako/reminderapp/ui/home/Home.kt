@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.text.SimpleDateFormat
 
 @Composable
 fun Home(
@@ -265,10 +266,17 @@ private fun ReminderListItem(
                 width = Dimension.preferredWrapContent
             }
         )
+        
+        // turn reminder_time into day.month.year klo 00:00 format
+        val reminderTime = reminder.reminder_time.split(" ")
+        val reminderDate = reminderTime[0].split("-")
+        val reminderTimeOnly = reminderTime[1].split(":")
 
+        val formattedDate = "${reminderDate[2]}.${reminderDate[1]}.${reminderDate[0]} klo ${reminderTimeOnly[0]}:${reminderTimeOnly[1]}"
+        
         // date
         Text(
-            text = reminder.reminder_time.toString(),
+            text = formattedDate,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.caption,

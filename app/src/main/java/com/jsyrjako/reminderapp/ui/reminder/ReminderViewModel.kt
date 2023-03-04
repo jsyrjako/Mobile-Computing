@@ -1,15 +1,18 @@
 package com.jsyrjako.reminderapp.ui.reminder
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationBuilderWithBuilderAccessor
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.*
 import com.jsyrjako.core.domain.entity.Category
 import com.jsyrjako.core.domain.entity.Reminder
 import com.jsyrjako.core.domain.repository.CategoryRepository
@@ -17,6 +20,7 @@ import com.jsyrjako.core.domain.repository.ReminderRepository
 import com.jsyrjako.reminderapp.Graph
 import com.jsyrjako.reminderapp.R
 import com.jsyrjako.reminderapp.ui.category.CategoryViewState
+import com.jsyrjako.reminderapp.ui.util.NotificationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +30,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
+import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 private lateinit var setReminder: Reminder
@@ -50,7 +56,8 @@ class ReminderViewModel @Inject constructor (
     fun saveReminder(reminder: Reminder) {
         viewModelScope.launch {
             reminderRepository.addReminder(reminder)
-            notifyUserOfPayment(reminder)
+            notifyUserOfReminder(reminder)
+            setOneTimeNotification(reminder)
         }
     }
 
@@ -64,6 +71,7 @@ class ReminderViewModel @Inject constructor (
     fun editReminder(reminder: Reminder) {
         viewModelScope.launch {
             reminderRepository.editReminder(reminder)
+            setOneTimeNotification(reminder)
         }
     }
 
@@ -79,7 +87,7 @@ class ReminderViewModel @Inject constructor (
         _selectedCategory.value = category
     }
 
-    private fun notifyUserOfPayment(reminder: Reminder) {
+    private fun notifyUserOfReminder(reminder: Reminder) {
         val notificationId = 10
         val builder = NotificationCompat.Builder(
             Graph.appContext,
@@ -108,6 +116,62 @@ class ReminderViewModel @Inject constructor (
             notify(notificationId, builder.build())
         }
     }
+
+    private fun setOneTimeNotification(reminder: Reminder) {
+
+        val todayTime = Calendar.getInstance()
+        // calculate the time when the notification should be shown
+        // reminder_time.value is saved as "yyyy-MM-dd HH:mm"
+        val reminderTime = reminder.reminder_time.split(" ")
+        val reminderDate = reminderTime[0].split("-")
+        val reminderTimeOnly = reminderTime[1].split(":")
+        val year = reminderDate[0].toInt()
+        val month = reminderDate[1].toInt() - 1 // month starts from 0 in Calendar but in reminder it starts from 1
+        val day = reminderDate[2].toInt()
+        val hour = reminderTimeOnly[0].toInt()
+        val minute = reminderTimeOnly[1].toInt()
+
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.YEAR, year)
+        calendar.set(Calendar.MONTH, month)
+        calendar.set(Calendar.DAY_OF_MONTH, day)
+        calendar.set(Calendar.HOUR_OF_DAY, hour)
+        calendar.set(Calendar.MINUTE, minute)
+        calendar.set(Calendar.SECOND, 0)
+
+        println("calendar date: ${calendar.time}")
+
+        println("Reminder time: ${calendar.timeInMillis}")
+        println("Today time: ${todayTime.timeInMillis}")
+
+        val time = calendar.timeInMillis - todayTime.timeInMillis
+        val timeInSec = time / 1000
+        
+
+        println("Next notification ${reminder.title} will be shown in ${timeInSec} seconds")
+
+        val workManager = WorkManager.getInstance(Graph.appContext)
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        
+        val notificationWorker = OneTimeWorkRequestBuilder<NotificationWorker>()
+            .setInitialDelay(time, TimeUnit.MILLISECONDS)
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueue(notificationWorker)
+
+        workManager.getWorkInfoByIdLiveData(notificationWorker.id)
+            .observeForever { workInfo ->
+                if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                    createSuccessNotification(reminder)
+                } else {
+                    createFailureNotification(reminder)
+                }
+            }
+    }
+
     private fun createNotificationChannel() {
         val name = "NotificationChannel"
         val descriptionText = "NotificationChannelDescription"
@@ -119,6 +183,55 @@ class ReminderViewModel @Inject constructor (
             .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
+
+    private fun createSuccessNotification(reminder: Reminder) {
+        val notificationId = 10
+        val builder = NotificationCompat.Builder(
+            Graph.appContext,
+            "channel_id"
+        )
+            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setContentTitle("You have reminder ${reminder.title}")
+            .setContentText("${reminder.text}")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        with(NotificationManagerCompat.from(Graph.appContext)) {
+            if (ActivityCompat.checkSelfPermission(
+                    Graph.appContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+
+                return
+            }
+            notify(notificationId, builder.build())
+        }
+    }
+
+    private fun createFailureNotification(reminder: Reminder) {
+        val notificationId = 10
+        val builder = NotificationCompat.Builder(
+            Graph.appContext,
+            "channel_id"
+        )
+            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setContentTitle("Notification failed")
+            .setContentText("Notification for ${reminder.title} failed")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        with(NotificationManagerCompat.from(Graph.appContext)) {
+            if (ActivityCompat.checkSelfPermission(
+                    Graph.appContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+
+                return
+            }
+            notify(notificationId, builder.build())
+        }
+    }
+            
 
     fun loadRemindersFor(category: Category?) {
         if (category != null) {

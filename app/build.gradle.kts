@@ -103,6 +103,23 @@ dependencies {
     // Room
     implementation(androidx.room.room)
     kapt(androidx.room.compiler)
+
+    //work
+    // Kotlin + coroutines
+    implementation(androidx.work.runtime_ktx)
+
+    // optional - RxJava2 support
+    implementation(androidx.work.rxjava2)
+
+    // optional - GCMNetworkManager support
+    implementation(androidx.work.gcm)
+
+    // optional - Test helpers
+    androidTestImplementation(androidx.work.testing)
+
+    // optional - Multiprocess support
+    implementation(androidx.work.multiprocess)
+
 }
 kapt {
     correctErrorTypes = true
