@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun Home(
@@ -170,6 +171,8 @@ private fun ChoiceChipContent(
     }
 }
 
+// show reminders for selected category
+// show only reminders that time has passed
 @Composable
 private fun ReminderList(
     selectedCategory: Category,
@@ -179,6 +182,7 @@ private fun ReminderList(
     reminderViewModel.loadRemindersFor(selectedCategory)
 
     val reminderViewState by reminderViewModel.uiState.collectAsState()
+
     when (reminderViewState) {
         is ReminderViewState.Loading -> {}
         is ReminderViewState.Success -> {
@@ -188,14 +192,34 @@ private fun ReminderList(
                 contentPadding = PaddingValues(0.dp),
                 verticalArrangement = Arrangement.Center
             ) {
+
                 items(reminderList) { item ->
-                    ReminderListItem(
+
+                    val reminderTime = item.reminder_time.split(" ")
+                    val reminderDate = reminderTime[0].split("-")
+                    val reminderTimeOnly = reminderTime[1].split(":")
+
+                    var year = reminderDate[0].toInt()
+                    var month = reminderDate[1].toInt() - 1
+                    var day = reminderDate[2].toInt()
+                    var hour = reminderTimeOnly[0].toInt()
+                    var minute = reminderTimeOnly[1].toInt()
+
+                    val calendar = Calendar.getInstance()
+                    calendar.set(year, month, day, hour, minute)
+
+                    if (calendar.timeInMillis <= System.currentTimeMillis()) {
+                        ReminderListItem(
                         reminder = item,
                         category = selectedCategory,
                         onClick = {},
                         reminderViewModel = reminderViewModel,
                         navController = navController
                     )
+                    } else{
+                        println("Reminder ${item.title} is not yet due")
+                        println("it is due at ${calendar.time}}")
+                    }
                 }
             }
         }

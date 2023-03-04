@@ -236,7 +236,7 @@ fun editDateTimePicker(
      val DatePickerDialog = DatePickerDialog(
          context,
           { _: DatePicker, year: Int, month: Int, day: Int ->
-             date.value = "$year-$month-$day"
+             date.value = "$year-${month+1}-$day"
          }, year, month, day
      )
 
