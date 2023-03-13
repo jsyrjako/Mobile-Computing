@@ -1,57 +1,46 @@
-package com.jsyrjako.reminderapp.ui.home
+package com.jsyrjako.reminderapp.ui.reminder
 
+import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AddLocation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.compose.material.Scaffold
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import com.jsyrjako.core.domain.entity.Category
 import com.jsyrjako.core.domain.entity.Reminder
 import com.jsyrjako.reminderapp.ui.category.CategoryViewModel
 import com.jsyrjako.reminderapp.ui.category.CategoryViewState
-import com.jsyrjako.reminderapp.ui.reminder.ReminderViewModel
-import com.jsyrjako.reminderapp.ui.reminder.ReminderViewState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
-import androidx.core.content.ContextCompat
-import android.Manifest
-import android.location.Location
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.rounded.AddLocation
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.SphericalUtil
+import com.jsyrjako.reminderapp.ui.home.getCurrentLocation
 import java.util.*
 
-var currentLocation = LatLng(0.0,0.0)
-
-
-
 @Composable
-fun Home(
+fun NearbyRemindersScreen(
     navController: NavController,
     categoryViewModel: CategoryViewModel = hiltViewModel(),
     reminderViewModel: ReminderViewModel = hiltViewModel(),
@@ -80,9 +69,7 @@ fun Home(
 
         }
     }
-
 }
-
 
 @Composable
 fun HomeContent(
@@ -105,20 +92,6 @@ fun HomeContent(
 
     Scaffold(
         modifier = Modifier.padding(bottom = 24.dp),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(route = "Reminder") },
-                contentColor = Color.Blue,
-                modifier = Modifier.padding(all = 20.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = null
-                )
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center,
-        isFloatingActionButtonDocked = true,
         bottomBar = {
             BottomAppBar(
                 backgroundColor = MaterialTheme.colors.primary,
@@ -127,43 +100,24 @@ fun HomeContent(
             ) {
                 Button(
                     onClick = {
-                            navController.navigate("Nearby")
+                            navController.navigate("Location")
                         }
                 ) {
-                    Text(text = "Virtual  Location")
-                }
-                
-                Spacer(modifier = Modifier.weight(1f))
-
-                // button to update current Location
-                IconButton(onClick = {
-                    requestPermission(
-                        context =  context,
-                        permission = Manifest.permission.ACCESS_FINE_LOCATION,
-                        requestPermission = { launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
-                    ).apply {
-                        currentLocation = getCurrentLocation(context)
-                        Log.d("Current Location", currentLocation.toString())
-                    }
-                }
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.AddLocation,
-                        contentDescription = null
-                    )
+                    Text(text = "Set Virtual Location")
                 }
             }
         }
+
 
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(
-                onClick = { navController.navigate("Profile") }
+                onClick = { navController.popBackStack() }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    imageVector = Icons.Default.ArrowBack,
                     contentDescription = null
                 )
             }
@@ -173,15 +127,21 @@ fun HomeContent(
                 onCategorySelected = onCategorySelected,
             )
 
+            if (latLng != null) {
+                Text(
+                    text = "Set Location \n Latitude: ${latLng.latitude}, \nLongitude: ${latLng.longitude}"
+                )
+            }
+
             ReminderList(
                 selectedCategory = selectedCategory,
                 reminderViewModel = reminderViewModel,
                 navController = navController,
+                latLng = latLng
             )
         }
     }
 }
-
 
 @Composable
 private fun CategoryTabs(
@@ -212,6 +172,8 @@ private fun CategoryTabs(
     }
 }
 
+private val emptyTabIndicator: @Composable (List<TabPosition>) -> Unit = {}
+
 @Composable
 private fun ChoiceChipContent(
     text: String,
@@ -238,13 +200,12 @@ private fun ChoiceChipContent(
     }
 }
 
-// show reminders for selected category
-// show only reminders that time has passed
 @Composable
 private fun ReminderList(
     selectedCategory: Category,
     reminderViewModel: ReminderViewModel,
     navController: NavController,
+    latLng: LatLng?
 ) {
     reminderViewModel.loadRemindersFor(selectedCategory)
 
@@ -265,7 +226,7 @@ private fun ReminderList(
                     val calendar = Calendar.getInstance()
                     calendar.timeInMillis = System.currentTimeMillis() + 1000
 
-                    var currentDistance = 5000.00
+                    var virtualDistance = 5000.00
 
                     try {
                         val reminderTime = item.reminder_time.split(" ")
@@ -278,7 +239,7 @@ private fun ReminderList(
                         var hour = reminderTimeOnly[0].toInt()
                         var minute = reminderTimeOnly[1].toInt()
 
-                      
+
                         calendar.set(year, month, day, hour, minute)
 
                     } catch (e: Exception) {
@@ -286,23 +247,15 @@ private fun ReminderList(
                     }
 
                     try {
-                        currentDistance = SphericalUtil.computeDistanceBetween(
-                            currentLocation,
+                        virtualDistance = SphericalUtil.computeDistanceBetween(
+                            latLng,
                             LatLng(item.location_x.toDouble(), item.location_y.toDouble())
                         )
                     } catch (e: Exception) {
-                        Log.d("Error", "Error while getting currentdistance")
+                        Log.d("Error", "Error while getting virtualDistance")
                     }
 
-                    if (calendar.timeInMillis <= System.currentTimeMillis()) {
-                        ReminderListItem(
-                            reminder = item,
-                            category = selectedCategory,
-                            onClick = {},
-                            reminderViewModel = reminderViewModel,
-                            navController = navController
-                        )
-                    } else if (currentDistance <= 3000) {
+                     if (virtualDistance <= 2000) {
                         ReminderListItem(
                             reminder = item,
                             category = selectedCategory,
@@ -312,7 +265,7 @@ private fun ReminderList(
                         )
 
                     } else {
-                        Log.d("Error", "Current distance: $currentDistance and time: ${calendar.timeInMillis}")
+                        Log.d("Error", "Current distance: $virtualDistance")
                     }
                 }
             }
@@ -320,7 +273,6 @@ private fun ReminderList(
         else -> {}
     }
 }
-
 
 @Composable
 private fun ReminderListItem(
@@ -339,7 +291,7 @@ private fun ReminderListItem(
             }
             .fillMaxWidth(),
 
-    ) {
+        ) {
         val (dividerRef, titleRef, categoryRef, iconRef, iconRef2, dateRef) = createRefs()
         Divider(
 
@@ -389,7 +341,6 @@ private fun ReminderListItem(
         var formattedDate = "Lat: ${reminder.location_x} Lng: ${reminder.location_y}"
 
         try {
-            // turn reminder_time into day.month.year klo 00:00 format
             val reminderTime = reminder.reminder_time.split(" ")
             val reminderDate = reminderTime[0].split("-")
             val reminderTimeOnly = reminderTime[1].split(":")
@@ -461,6 +412,9 @@ private fun ReminderListItem(
         }
     }
 }
+
+
+
 private fun requestPermission(
     context: Context,
     permission: String,
@@ -473,35 +427,4 @@ private fun requestPermission(
     ) {
         requestPermission()
     }
-}
-
-private val emptyTabIndicator: @Composable (List<TabPosition>) -> Unit = {}
-
-
-
-fun getCurrentLocation(context: Context): LatLng {
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    if (ActivityCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        // TODO: Consider calling
-        //    ActivityCompat#requestPermissions
-        // here to request the missing permissions, and then overriding
-        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-        //                                          int[] grantResults)
-        // to handle the case where the user grants the permission. See the documentation
-        // for ActivityCompat#requestPermissions for more details.
-        return LatLng(0.0, 0.0)
-    }
-    fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-        if (location != null) {
-            currentLocation = LatLng(location.latitude, location.longitude)
-        }
-    }
-    return currentLocation
 }

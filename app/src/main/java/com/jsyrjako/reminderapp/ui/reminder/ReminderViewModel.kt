@@ -4,8 +4,16 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.jsyrjako.reminderapp.ui.home.Home
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationBuilderWithBuilderAccessor
 import androidx.core.app.NotificationCompat
@@ -13,6 +21,12 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.*
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofencingEvent
+import com.google.android.gms.location.GeofencingRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import com.jsyrjako.core.domain.entity.Category
 import com.jsyrjako.core.domain.entity.Reminder
 import com.jsyrjako.core.domain.repository.CategoryRepository
@@ -46,18 +60,23 @@ class ReminderViewModel @Inject constructor (
     val uiState: StateFlow<ReminderViewState> = _reminderViewState
 
     private val _categoryList: MutableStateFlow<List<Category>> = MutableStateFlow(mutableListOf())
-    val categories: StateFlow<List<Category>> =_categoryList
+    val categories: StateFlow<List<Category>> = _categoryList
 
     private val _categoryViewState = MutableStateFlow<CategoryViewState>(CategoryViewState.Loading)
     val categoryState: StateFlow<CategoryViewState> = _categoryViewState
 
     private val _selectedCategory = MutableStateFlow<Category?>(null)
 
+    private val _currentLocation = MutableStateFlow<LatLng?>(null)
+
     fun saveReminder(reminder: Reminder) {
         viewModelScope.launch {
             reminderRepository.addReminder(reminder)
             notifyUserOfReminder(reminder)
-            setOneTimeNotification(reminder)
+            println(reminder.reminder_time)
+            if (reminder.reminder_time != "") {
+                setOneTimeNotification(reminder)
+            }
         }
     }
 
@@ -79,12 +98,16 @@ class ReminderViewModel @Inject constructor (
         setReminder = reminder
     }
 
-    fun getReminder() : Reminder{
+    fun getReminder(): Reminder {
         return setReminder
     }
 
     fun onCategorySelected(category: Category) {
         _selectedCategory.value = category
+    }
+
+    fun notify(reminder: Reminder) {
+        createSuccessNotification(reminder)
     }
 
     private fun notifyUserOfReminder(reminder: Reminder) {
@@ -119,57 +142,62 @@ class ReminderViewModel @Inject constructor (
 
     private fun setOneTimeNotification(reminder: Reminder) {
 
-        val todayTime = Calendar.getInstance()
-        // calculate the time when the notification should be shown
-        // reminder_time.value is saved as "yyyy-MM-dd HH:mm"
-        val reminderTime = reminder.reminder_time.split(" ")
-        val reminderDate = reminderTime[0].split("-")
-        val reminderTimeOnly = reminderTime[1].split(":")
-        val year = reminderDate[0].toInt()
-        val month = reminderDate[1].toInt() - 1 // month starts from 0 in Calendar but in reminder it starts from 1
-        val day = reminderDate[2].toInt()
-        val hour = reminderTimeOnly[0].toInt()
-        val minute = reminderTimeOnly[1].toInt()
+        try {
+            val todayTime = Calendar.getInstance()
+            // calculate the time when the notification should be shown
+            // reminder_time.value is saved as "yyyy-MM-dd HH:mm"
+            val reminderTime = reminder.reminder_time.split(" ")
+            val reminderDate = reminderTime[0].split("-")
+            val reminderTimeOnly = reminderTime[1].split(":")
+            val year = reminderDate[0].toInt()
+            val month =
+                reminderDate[1].toInt() - 1 // month starts from 0 in Calendar but in reminder it starts from 1
+            val day = reminderDate[2].toInt()
+            val hour = reminderTimeOnly[0].toInt()
+            val minute = reminderTimeOnly[1].toInt()
 
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.YEAR, year)
-        calendar.set(Calendar.MONTH, month)
-        calendar.set(Calendar.DAY_OF_MONTH, day)
-        calendar.set(Calendar.HOUR_OF_DAY, hour)
-        calendar.set(Calendar.MINUTE, minute)
-        calendar.set(Calendar.SECOND, 0)
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.MONTH, month)
+            calendar.set(Calendar.DAY_OF_MONTH, day)
+            calendar.set(Calendar.HOUR_OF_DAY, hour)
+            calendar.set(Calendar.MINUTE, minute)
+            calendar.set(Calendar.SECOND, 0)
 
-        println("calendar date: ${calendar.time}")
+            println("calendar date: ${calendar.time}")
 
-        println("Reminder time: ${calendar.timeInMillis}")
-        println("Today time: ${todayTime.timeInMillis}")
+            println("Reminder time: ${calendar.timeInMillis}")
+            println("Today time: ${todayTime.timeInMillis}")
 
-        val time = calendar.timeInMillis - todayTime.timeInMillis
-        val timeInSec = time / 1000
-        
+            val time = calendar.timeInMillis - todayTime.timeInMillis
+            val timeInSec = time / 1000
 
-        println("Next notification ${reminder.title} will be shown in ${timeInSec} seconds")
 
-        val workManager = WorkManager.getInstance(Graph.appContext)
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        
-        val notificationWorker = OneTimeWorkRequestBuilder<NotificationWorker>()
-            .setInitialDelay(time, TimeUnit.MILLISECONDS)
-            .setConstraints(constraints)
-            .build()
+            println("Next notification ${reminder.title} will be shown in ${timeInSec} seconds")
 
-        workManager.enqueue(notificationWorker)
+            val workManager = WorkManager.getInstance(Graph.appContext)
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
 
-        workManager.getWorkInfoByIdLiveData(notificationWorker.id)
-            .observeForever { workInfo ->
-                if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                    createSuccessNotification(reminder)
-                } else {
-                    notifyUserOfReminder(reminder)
+            val notificationWorker = OneTimeWorkRequestBuilder<NotificationWorker>()
+                .setInitialDelay(time, TimeUnit.MILLISECONDS)
+                .setConstraints(constraints)
+                .build()
+
+            workManager.enqueue(notificationWorker)
+
+            workManager.getWorkInfoByIdLiveData(notificationWorker.id)
+                .observeForever { workInfo ->
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                        createSuccessNotification(reminder)
+                    } else {
+                        notifyUserOfReminder(reminder)
+                    }
                 }
-            }
+        } catch (e: Exception) {
+            createFailureNotification(reminder)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -231,7 +259,18 @@ class ReminderViewModel @Inject constructor (
             notify(notificationId, builder.build())
         }
     }
-            
+
+    // returns list of all reminders
+    suspend fun loadAllReminders(): List<Reminder> {
+        return reminderRepository.loadAllReminders()
+    }
+
+    fun loadReminders() {
+        viewModelScope.launch {
+            val reminders = reminderRepository.loadAllReminders()
+            _reminderViewState.value = ReminderViewState.Success(reminders)
+        }
+    }
 
     fun loadRemindersFor(category: Category?) {
         if (category != null) {
@@ -240,7 +279,8 @@ class ReminderViewModel @Inject constructor (
                 _reminderViewState.value =
                     ReminderViewState.Success(
                         reminders.filter {
-                            it.categoryId == category.categoryId }
+                            it.categoryId == category.categoryId
+                        }
                     )
             }
         }
@@ -263,28 +303,19 @@ class ReminderViewModel @Inject constructor (
             .launchIn(viewModelScope)
     }
 
-    //private fun fakeData() = listOf(
-    //    Category(name = "Home"),
-    //    Category(name = "Test"),
-    //    Category(name = "Work"),
-    //    Category(name = "ttttt")
-    //)
-
     init {
         createNotificationChannel()
 
-        //fakeData().forEach {
-        //    viewModelScope.launch {
-        //        categoryRepository.addCategory(it)
-        //    }
-        //}
-        //dummyData().forEach {
-        //    viewModelScope.launch {
-        //        savePayment(it)
-        //    }
-        //}
         viewModelScope.launch {
             loadCategories()
         }
     }
+
+    // updates current location for geofence
+    fun updateCurrentLocation(location: LatLng) {
+        _currentLocation.value = location
+    }
 }
+
+
+

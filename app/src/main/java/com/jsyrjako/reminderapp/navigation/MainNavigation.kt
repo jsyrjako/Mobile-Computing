@@ -11,6 +11,7 @@ import com.jsyrjako.reminderapp.ui.login.LoginScreen
 import com.jsyrjako.reminderapp.ui.mainscreen.MainScreen
 import com.jsyrjako.reminderapp.ui.maps.ReminderLocation
 import com.jsyrjako.reminderapp.ui.profile.Profile
+import com.jsyrjako.reminderapp.ui.reminder.NearbyRemindersScreen
 import com.jsyrjako.reminderapp.ui.reminder.ReminderScreen
 import com.jsyrjako.reminderapp.ui.reminder.editReminderScreen
 import com.jsyrjako.reminderapp.ui.singUp.SingUpScreen
@@ -46,6 +47,9 @@ fun MainNavigation (){
         }
         composable(route = "Location") {
             ReminderLocation(navController = navController)
+        }
+        composable(route = "Nearby") {
+            NearbyRemindersScreen(navController = navController)
         }
     }
 }

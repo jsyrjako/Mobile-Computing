@@ -13,6 +13,7 @@ import javax.inject.Inject
 class CategoryViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
+
     private val _viewState = MutableStateFlow<CategoryViewState>(CategoryViewState.Loading)
     val uiState: StateFlow<CategoryViewState> = _viewState
 

@@ -28,12 +28,12 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.work.*
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import java.time.LocalDateTime
 import com.jsyrjako.core.domain.entity.Reminder
-import java.sql.Date
+import com.jsyrjako.reminderapp.GeofenceHelper
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 
 @Composable
@@ -168,6 +168,11 @@ fun ReminderScreen(
                             reminder_seen = reminder_seen
                         )
                         viewModel.saveReminder(reminder)
+                        
+                        if (latLng != null) {
+                            val geofenceHelper = GeofenceHelper(context)
+                            geofenceHelper.addGeofence(reminder)
+                        }
 
                         navController.popBackStack()
                               },
@@ -332,3 +337,5 @@ private fun DateTimePicker(
         }
     )
 }
+
+
