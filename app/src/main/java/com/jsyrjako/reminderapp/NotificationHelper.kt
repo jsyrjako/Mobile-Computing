@@ -21,6 +21,7 @@ class NotificationHelper(private val context: Context) {
             .setContentText(message)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
+            .setStyle(NotificationCompat.BigPictureStyle().setBigContentTitle(title))
             .build()
 
         return notification

@@ -311,6 +311,14 @@ private fun ReminderList(
                             navController = navController
                         )
 
+                    } else if (currentDistance == 5000.0 && calendar.timeInMillis == System.currentTimeMillis() + 1000) {
+                        ReminderListItem(
+                            reminder = item,
+                            category = selectedCategory,
+                            onClick = {},
+                            reminderViewModel = reminderViewModel,
+                            navController = navController
+                        )
                     } else {
                         Log.d("Error", "Current distance: $currentDistance and time: ${calendar.timeInMillis}")
                     }
@@ -386,7 +394,11 @@ private fun ReminderListItem(
                 width = Dimension.preferredWrapContent
             }
         )
-        var formattedDate = "Lat: ${reminder.location_x} Lng: ${reminder.location_y}"
+        var formattedDate = ""
+
+        if (reminder.location_x != "" || reminder.location_y != ""){
+            formattedDate = "Lat: ${reminder.location_x} Lng: ${reminder.location_y}"
+        }
 
         try {
             // turn reminder_time into day.month.year klo 00:00 format

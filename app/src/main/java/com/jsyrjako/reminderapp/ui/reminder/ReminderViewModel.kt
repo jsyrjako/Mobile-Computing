@@ -310,11 +310,6 @@ class ReminderViewModel @Inject constructor (
             loadCategories()
         }
     }
-
-    // updates current location for geofence
-    fun updateCurrentLocation(location: LatLng) {
-        _currentLocation.value = location
-    }
 }
 
 

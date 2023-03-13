@@ -16,16 +16,29 @@ class GeofenceBroadcastReceiver() : BroadcastReceiver() {
             val geofencingEvent = GeofencingEvent.fromIntent(intent)
             val geofencingTransition = geofencingEvent.geofenceTransition
 
-            val triggeringGeofences = geofencingEvent.triggeringGeofences
+            var id = ""
+            var title = ""
+            var text = ""
+            var location_x = ""
+            var location_y = ""
 
-            println("Triggering geofences: $triggeringGeofences")
 
-            println("Geofence transition: $geofencingTransition")
+            //val triggeringGeofences = geofencingEvent.triggeringGeofences
+            //println("Triggering geofences: $triggeringGeofences")
+            //println("Geofence transition: $geofencingTransition")
+
+            if (intent != null) {
+                id = intent.getStringExtra("reminder_id").toString()
+                title = intent.getStringExtra("reminder_title").toString()
+                text = intent.getStringExtra("reminder_text").toString()
+                location_x = intent.getStringExtra("reminder_location_x").toString()
+                location_y = intent.getStringExtra("reminder_location_y").toString()
+            }
 
             if (geofencingTransition == Geofence.GEOFENCE_TRANSITION_ENTER || geofencingTransition == Geofence.GEOFENCE_TRANSITION_DWELL) {
                 // create notification
                 val notificationHelper = NotificationHelper(context)
-                val notification = notificationHelper.createNotification("Reminder", "You are near your reminder location")
+                val notification = notificationHelper.createNotification("Reminder: $title is near you", "$text \nLat:$location_x Lng:$location_y")
                 notificationHelper.manager.notify(1, notification)
                 Log.d("GeofenceBroadcastReceiver", "Notify")
 

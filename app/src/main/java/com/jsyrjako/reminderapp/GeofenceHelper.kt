@@ -38,6 +38,11 @@ class GeofenceHelper (private val context: Context) {
             .build()
 
         val intent = Intent(context, GeofenceBroadcastReceiver::class.java)
+        .putExtra("reminder_id", reminder.reminderId.toString())
+        .putExtra("reminder_title", reminder.title)
+        .putExtra("reminder_text", reminder.text)
+        .putExtra("reminder_location_x", reminder.location_x)
+        .putExtra("reminder_location_y", reminder.location_y)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context, 0,
